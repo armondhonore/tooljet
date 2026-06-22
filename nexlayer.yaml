@@ -1,0 +1,31 @@
+application:
+  name: tooljet
+  pods:
+  - name: app
+    image: tooljet/tooljet-ce:latest
+    path: /
+    servicePorts:
+    - 3000
+    vars:
+      PG_HOST: postgres.pod
+      PG_PORT: "5432"
+      PG_USER: tooljet
+      PG_PASS: tooljet
+      PG_DB: tooljet
+      SECRET_KEY_BASE: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+      LOCKBOX_MASTER_KEY: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+      TOOLJET_HOST: "https://relaxed-weasel-tooljet.cloud.nexlayer.ai"
+      DEPLOYMENT_PLATFORM: docker
+      NODE_ENV: production
+  - name: postgres
+    image: postgres:16-alpine
+    servicePorts:
+    - 5432
+    vars:
+      POSTGRES_DB: tooljet
+      POSTGRES_USER: tooljet
+      POSTGRES_PASSWORD: tooljet
+    volumes:
+    - name: tooljet-db
+      mountPath: /var/lib/postgresql/data
+      size: 5Gi
