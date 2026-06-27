@@ -2,7 +2,7 @@ application:
   name: tooljet
   pods:
   - name: app
-    image: "# filled by pipeline"
+    image: "registry.nexlayer.io/user_01kece1xyh817dwff7wnarhkxd/tooljet:19f078ccec1"
     path: /
     servicePorts:
     - 3000
@@ -33,7 +33,7 @@ application:
     vars:
       POSTGRES_DB: tooljet
       POSTGRES_USER: tooljet
-      POSTGRES_PASSWORD: tooljet
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     volumes:
     - name: tooljet-db
       mountPath: /var/lib/postgresql/data
