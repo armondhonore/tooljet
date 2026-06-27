@@ -2,14 +2,14 @@
 
 **Live:** [https://relaxed-weasel-tooljet.cloud.nexlayer.ai](https://relaxed-weasel-tooljet.cloud.nexlayer.ai)  
 
-**Runtime:**  · **Port:** auto-detected · **Deploy branch:** main
+**Runtime:**  · **Port:** auto-detected · **Deploy branch:** nexlayer
 
 ---
 
 ## How this deployment works
 
 **tooljet** is deployed on [Nexlayer](https://nexlayer.ai) — a container-native
-platform where every push to `main` triggers a fully automated build-and-deploy
+platform where every push to `nexlayer` triggers a fully automated build-and-deploy
 pipeline with no infrastructure management required:
 
 1. **AI analysis** — the Nexlayer agent reads your repo, understands your runtime,
@@ -39,18 +39,29 @@ application:
   name: tooljet
   pods:
   - name: app
-    image: mirror.gcr.io/tooljet/tooljet-ce:latest
+    image: "registry.nexlayer.io/user_01kece1xyh817dwff7wnarhkxd/tooljet:19f0792e433"
     path: /
     servicePorts:
     - 3000
     vars:
-      PG_HOST: postgres.pod
+      # Main ToolJet metadata DB. PG_PASS references ${POSTGRES_PASSWORD} so the
+      # platform's credential provisioner injects the SAME generated value the
+      # postgres pod is initialized with (avoids generated-password desync).
+      PG_HOST: tooljet-postgres-service
       PG_PORT: "5432"
       PG_USER: tooljet
-      PG_PASS: tooljet
+      PG_PASS: ${POSTGRES_PASSWORD}
       PG_DB: tooljet
-      SECRET_KEY_BASE: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
-      LOCKBOX_MASTER_KEY: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+      # Secondary internal ToolJet Database (created by db:setup:prod create-database step)
+      TOOLJET_DB_HOST: tooljet-postgres-service
+      TOOLJET_DB_PORT: "5432"
+      TOOLJET_DB_USER: tooljet
+      TOOLJET_DB_PASS: ${POSTGRES_PASSWORD}
+      TOOLJET_DB: tooljet_db
+      # Crypto keys (64-hex LOCKBOX, 128-hex SECRET_KEY_BASE) — kept stable so already
+      # migrated/encrypted data stays readable across redeploys.
+      LOCKBOX_MASTER_KEY: "af2c01528ad9bd04403405cbc51695301bae196b02417389ab24d23590889168"
+      SECRET_KEY_BASE: "4dfc7b760a070d73dc59c45402424553c586d31c72a08268a0f15f1e724768c5c0e041ff3432f9fed186de5c3a8a99b982f0325d89338ca47ce7bfb003d5b4dd"
       TOOLJET_HOST: "https://relaxed-weasel-tooljet.cloud.nexlayer.ai"
       DEPLOYMENT_PLATFORM: docker
       NODE_ENV: production
@@ -61,7 +72,9 @@ application:
     vars:
       POSTGRES_DB: tooljet
       POSTGRES_USER: tooljet
-      POSTGRES_PASSWORD: tooljet
+      # Generated + provisioned by the platform; the app's PG_PASS/TOOLJET_DB_PASS
+      # reference the same ${POSTGRES_PASSWORD} token so both resolve identically.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
     - name: tooljet-db
       mountPath: /var/lib/postgresql/data
@@ -87,7 +100,7 @@ only regenerates it if you delete it or on the very first deploy.
 ### `.github/workflows/nexlayer.yml` — CI/CD
 
 Triggers on:
-- **Push** to `main` → production redeploy
+- **Push** to `nexlayer` → production redeploy
 - **Pull request** → preview deploy with a unique URL posted as a PR comment
 - **Manual** → run on demand from the Actions tab (no commit required)
 
@@ -104,7 +117,7 @@ include this context in your prompt:
 > *"This project is deployed on Nexlayer. The deployment manifest is `nexlayer.yaml`.
 > The container exposes port auto-detected. When adding a new service (database, cache,
 > worker), add it as a new pod in `nexlayer.yaml` and reference it with
-> `<podName>.pod:<port>` syntax. CI/CD runs on push to `main`."*
+> `<podName>.pod:<port>` syntax. CI/CD runs on push to `nexlayer`."*
 
 The `nexlayer.skills` file in this repo gives agents structured guidance on the
 Nexlayer platform, including schema reference, common patterns, and anti-patterns.
