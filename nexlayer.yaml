@@ -2,29 +2,38 @@ application:
   name: tooljet
   pods:
   - name: app
-    image: tooljet/tooljet-ce:latest
+    image: "registry.nexlayer.io/user_01kece1xyh817dwff7wnarhkxd/tooljet:19f078ccec1"
     path: /
     servicePorts:
     - 3000
     vars:
-      PG_HOST: postgres.pod
+      # Main ToolJet metadata DB
+      PG_HOST: tooljet-postgres-service
       PG_PORT: "5432"
       PG_USER: tooljet
       PG_PASS: tooljet
       PG_DB: tooljet
-      SECRET_KEY_BASE: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
-      LOCKBOX_MASTER_KEY: "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4"
+      # Secondary internal ToolJet Database (created by db:setup:prod create-database step)
+      TOOLJET_DB_HOST: tooljet-postgres-service
+      TOOLJET_DB_PORT: "5432"
+      TOOLJET_DB_USER: tooljet
+      TOOLJET_DB_PASS: tooljet
+      TOOLJET_DB: tooljet_db
+      # Crypto keys (64-hex LOCKBOX, 128-hex SECRET_KEY_BASE) — kept stable so already
+      # migrated/encrypted data stays readable across redeploys.
+      LOCKBOX_MASTER_KEY: "af2c01528ad9bd04403405cbc51695301bae196b02417389ab24d23590889168"
+      SECRET_KEY_BASE: "4dfc7b760a070d73dc59c45402424553c586d31c72a08268a0f15f1e724768c5c0e041ff3432f9fed186de5c3a8a99b982f0325d89338ca47ce7bfb003d5b4dd"
       TOOLJET_HOST: "https://relaxed-weasel-tooljet.cloud.nexlayer.ai"
       DEPLOYMENT_PLATFORM: docker
       NODE_ENV: production
   - name: postgres
-    image: postgres:16-alpine
+    image: mirror.gcr.io/library/postgres:16-alpine
     servicePorts:
     - 5432
     vars:
       POSTGRES_DB: tooljet
       POSTGRES_USER: tooljet
-      POSTGRES_PASSWORD: tooljet
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
     volumes:
     - name: tooljet-db
       mountPath: /var/lib/postgresql/data
