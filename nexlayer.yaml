@@ -7,17 +7,19 @@ application:
     servicePorts:
     - 3000
     vars:
-      # Main ToolJet metadata DB
+      # Main ToolJet metadata DB. PG_PASS references ${POSTGRES_PASSWORD} so the
+      # platform's credential provisioner injects the SAME generated value the
+      # postgres pod is initialized with (avoids generated-password desync).
       PG_HOST: tooljet-postgres-service
       PG_PORT: "5432"
       PG_USER: tooljet
-      PG_PASS: tooljet
+      PG_PASS: ${POSTGRES_PASSWORD}
       PG_DB: tooljet
       # Secondary internal ToolJet Database (created by db:setup:prod create-database step)
       TOOLJET_DB_HOST: tooljet-postgres-service
       TOOLJET_DB_PORT: "5432"
       TOOLJET_DB_USER: tooljet
-      TOOLJET_DB_PASS: tooljet
+      TOOLJET_DB_PASS: ${POSTGRES_PASSWORD}
       TOOLJET_DB: tooljet_db
       # Crypto keys (64-hex LOCKBOX, 128-hex SECRET_KEY_BASE) — kept stable so already
       # migrated/encrypted data stays readable across redeploys.
@@ -33,7 +35,9 @@ application:
     vars:
       POSTGRES_DB: tooljet
       POSTGRES_USER: tooljet
-      POSTGRES_PASSWORD: tooljet
+      # Generated + provisioned by the platform; the app's PG_PASS/TOOLJET_DB_PASS
+      # reference the same ${POSTGRES_PASSWORD} token so both resolve identically.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
     - name: tooljet-db
       mountPath: /var/lib/postgresql/data
